@@ -100,7 +100,7 @@ void initRTC()
 
   // When time needs to be re-set on a previously configured device, the
   // following line sets the RTC to the date & time this sketch was compiled
-  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   // This line sets the RTC with an explicit date & time, for example to set
   // January 21, 2014 at 3am you would call:
   // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
@@ -136,27 +136,24 @@ int time = 0;
 void displayTime()
 {
   DateTime now = rtc.now();
-  time = now.hour() * 100 + now.minute();
-
-  Serial.print("Time: ");
-  Serial.println(time);
-
-  tm1637.showNumberDecEx(time, 0x40, false);
+  
+  tm1637.showNumberDecEx(now.twelveHour(), 0x40, false, 2, 0);
+  tm1637.showNumberDec(now.minute(), true, 2, 2);
 }
 
 void displaySeparator()
 {
-  tm1637.showNumberDec(time, false);
+  DateTime now = rtc.now();
+  
+  tm1637.showNumberDec(now.twelveHour(), false, 2, 0);
+  tm1637.showNumberDec(now.minute(), true, 2, 2);
 }
 
 
 void displayDate()
 {
   DateTime now = rtc.now();
-  int date = now.month() * 100 + now.day();
-
-  Serial.print("Date: ");
-  Serial.println(date);
-
-  tm1637.showNumberDec(date, false);
+  
+  tm1637.showNumberDec(now.month(), false, 2, 0);
+  tm1637.showNumberDec(now.day(), false, 2, 2);
 }
