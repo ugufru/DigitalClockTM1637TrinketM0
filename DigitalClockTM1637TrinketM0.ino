@@ -15,6 +15,9 @@ Adafruit_DotStar dotstar = Adafruit_DotStar(1, DOTSTAR_DATA_PIN, DOTSTAR_CLOCK_P
 TM1637Display tm1637(TM1637_CLK, TM1637_DIO);
 RTC_PCF8523 rtc;
 
+int brightness[] = { 2, 1, 1, 1, 1, 2, 4, 6, 8, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 8, 6, 4 };
+
+
 void flashDotStar(uint32_t color, int count)
 {
   for (int x = 0; x < count; x++)
@@ -96,9 +99,6 @@ void initRTC()
   // When time needs to be re-set on a previously configured device, the
   // following line sets the RTC to the date & time this sketch was compiled
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  // This line sets the RTC with an explicit date & time, for example to set
-  // January 21, 2014 at 3am you would call:
-  // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
 
   // When the RTC was stopped and stays connected to the battery, it has
   // to be restarted by clearing the STOP bit. Let's do this to ensure
@@ -145,6 +145,7 @@ void loop()
 
     uint32_t color = Wheel(now.second() * 4.2);
     color = dotstar.gamma32(color);
+    dotstar.setBrightness(brightness[now.hour()] * 8);
     dotstar.setPixelColor(0, color);
     dotstar.show();
 
@@ -157,6 +158,7 @@ void loop()
 
 void displayTime(DateTime now)
 {
+  tm1637.setBrightness(brightness[now.hour()]);
   tm1637.showNumberDecEx(now.twelveHour(), 0x40, false, 2, 0);
   tm1637.showNumberDec(now.minute(), true, 2, 2);
 }
