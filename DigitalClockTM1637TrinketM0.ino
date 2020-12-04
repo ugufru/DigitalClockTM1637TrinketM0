@@ -5,15 +5,14 @@
 #include <TimeLib.h>
 #include "RTClib.h"
 
-#define TM1637_CLK 3//pins definitions for TM1637 and can be changed to other ports
-#define TM1637_DIO 4
-
 #define DOTSTAR_DATA_PIN 7
 #define DOTSTAR_CLOCK_PIN 8
 #define DOTSTAR_BRIGHTNESS 32
+#define TM1637_CLK 3
+#define TM1637_DIO 4
 
-TM1637Display tm1637(TM1637_CLK, TM1637_DIO);
 Adafruit_DotStar dotstar = Adafruit_DotStar(1, DOTSTAR_DATA_PIN, DOTSTAR_CLOCK_PIN, DOTSTAR_BGR);
+TM1637Display tm1637(TM1637_CLK, TM1637_DIO);
 RTC_PCF8523 rtc;
 
 void flashDotStar(uint32_t color, int count)
@@ -57,12 +56,14 @@ void error(int pos)
 void initSerial()
 {
   Serial.begin(9600);
+  delay(2000); // Wait 2 seconds to establish thes connection before printing.
 }
 
 void init7SegmentDisplay()
 {
   tm1637.clear();
-  tm1637.setBrightness(0x04);
+  tm1637.setBrightness(0x01);
+  Serial.println("TM1637 quad 7 segment LED initialized.");
 }
 
 void initDotStar()
@@ -70,27 +71,21 @@ void initDotStar()
   dotstar.begin();
   dotstar.show();
   dotstar.setBrightness(DOTSTAR_BRIGHTNESS);
+  Serial.println("Trinket DotStar initialized.");
 }
 
 void initRTC()
 {
   if (rtc.begin() == false) error(80);
-
-  Serial.println("Something, something...");
-  Serial.print("rtc.initialized() = ");
-  Serial.println(rtc.initialized());
-  Serial.print("rtc.lostPower() = ");
-  Serial.println(rtc.lostPower());
+  if (rtc.initialized()) Serial.print("PCF8523 RTC initialized.");
+  if (rtc.lostPower()) Serial.print("PCF8523 RTC lost power.");
 
   if (! rtc.initialized() || rtc.lostPower())
   {
-    //   Serial.println("RTC is NOT initialized, let's set the time!");
+    Serial.println("RTC is NOT initialized, let's set the time!");
     // When time needs to be set on a new device, or after a power loss, the
     // following line sets the RTC to the date & time this sketch was compiled
-    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // This line sets the RTC with an explicit date & time, for example to set
-    // January 21, 2014 at 3am you would call:
-    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     //
     // Note: allow 2 seconds after inserting battery or applying external power
     // without battery before calling adjust(). This gives the PCF8523's
@@ -100,7 +95,7 @@ void initRTC()
 
   // When time needs to be re-set on a previously configured device, the
   // following line sets the RTC to the date & time this sketch was compiled
-  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   // This line sets the RTC with an explicit date & time, for example to set
   // January 21, 2014 at 3am you would call:
   // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
@@ -109,6 +104,8 @@ void initRTC()
   // to be restarted by clearing the STOP bit. Let's do this to ensure
   // the RTC is running.
   rtc.start();
+
+  Serial.println("RTC is running.");
 }
 
 void setup()
@@ -119,41 +116,59 @@ void setup()
   initRTC();
 }
 
-int counter = 0;
+
+uint8_t previousState = -1;
 
 void loop()
 {
-  counter = (counter + 1) % 2000000;
+  DateTime now = rtc.now();
 
-  if (counter == 0) displayTime();
-  if (counter == 1000000) displayDate();
-  if (counter == 500000) displaySeparator();
+  uint8_t state = now.second() % 4;
+
+  if (state != previousState)
+  {
+    Serial.println(now.timestamp());
+
+    switch (state)
+    {
+      case 0:
+        displayTime(now);
+        break;
+      case 1:
+        displaySeparator(now);
+        break;
+      case 2:
+      case 3:
+        displayDate(now);
+        break;
+    }
+
+    uint32_t color = Wheel(now.second() * 4.2);
+    color = dotstar.gamma32(color);
+    dotstar.setPixelColor(0, color);
+    dotstar.show();
+
+    previousState = state;
+  }
+
+  delay(100);
 }
 
 
-int time = 0;
-
-void displayTime()
+void displayTime(DateTime now)
 {
-  DateTime now = rtc.now();
-  
   tm1637.showNumberDecEx(now.twelveHour(), 0x40, false, 2, 0);
   tm1637.showNumberDec(now.minute(), true, 2, 2);
 }
 
-void displaySeparator()
+void displaySeparator(DateTime now)
 {
-  DateTime now = rtc.now();
-  
   tm1637.showNumberDec(now.twelveHour(), false, 2, 0);
   tm1637.showNumberDec(now.minute(), true, 2, 2);
 }
 
-
-void displayDate()
+void displayDate(DateTime now)
 {
-  DateTime now = rtc.now();
-  
   tm1637.showNumberDec(now.month(), false, 2, 0);
   tm1637.showNumberDec(now.day(), false, 2, 2);
 }
