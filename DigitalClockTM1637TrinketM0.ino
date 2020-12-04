@@ -1,7 +1,7 @@
 
 #include <Wire.h>
 #include <Adafruit_DotStar.h>
-#include "TM1637.h"
+#include <TM1637Display.h>
 #include <TimeLib.h>
 #include "RTClib.h"
 
@@ -12,7 +12,7 @@
 #define DOTSTAR_CLOCK_PIN 8
 #define DOTSTAR_BRIGHTNESS 32
 
-TM1637 tm1637(TM1637_CLK, TM1637_DIO);
+TM1637Display tm1637(TM1637_CLK, TM1637_DIO);
 Adafruit_DotStar dotstar = Adafruit_DotStar(1, DOTSTAR_DATA_PIN, DOTSTAR_CLOCK_PIN, DOTSTAR_BGR);
 RTC_PCF8523 rtc;
 
@@ -61,8 +61,8 @@ void initSerial()
 
 void init7SegmentDisplay()
 {
-  tm1637.init();
-  tm1637.set(7);
+  tm1637.clear();
+  tm1637.setBrightness(0x04);
 }
 
 void initDotStar()
@@ -130,65 +130,33 @@ void loop()
   if (counter == 500000) displaySeparator();
 }
 
-void displaySeparator()
-{
-  //  tm1637.point(true);
-}
+
+int time = 0;
 
 void displayTime()
 {
   DateTime now = rtc.now();
-  char format[] = "hhmmap";
-  now.toString(format);
-  format[4] = 0;
-
-  if (format[0] == 48) format[0] = 32;
+  time = now.hour() * 100 + now.minute();
 
   Serial.print("Time: ");
-  Serial.println(format);
+  Serial.println(time);
 
-  tm1637.clearDisplay();
-//  tm1637.point(false);
-  tm1637.displayStr(format);
+  tm1637.showNumberDecEx(time, 0x40, false);
+}
+
+void displaySeparator()
+{
+  tm1637.showNumberDec(time, false);
 }
 
 
 void displayDate()
 {
   DateTime now = rtc.now();
-  char format[] = "MMDD";
-  now.toString(format);
+  int date = now.month() * 100 + now.day();
+
   Serial.print("Date: ");
-  Serial.println(format);
+  Serial.println(date);
 
-  tm1637.clearDisplay();
-  tm1637.displayStr(format);
-}
-
-void test()
-{
-  tm1637.init();
-  tm1637.set(2);
-  //  tm1637.displayStr("System Ready!");
-  //  tm1637.point(true);
-  tm1637.displayStr("Hr 5");
-  delay(5000);
-  tm1637.displayStr("Mi43");
-  delay(5000);
-}
-
-void testTM1637()
-{
-  int8_t TimeDisp[] = {0x00, 0x01, 0x02, 0x70};
-
-  for (int n = 0; n < 128; n++)
-  {
-    TimeDisp[0] = n / 16;
-    TimeDisp[1] = n % 16;
-    TimeDisp[2] = 32;
-    TimeDisp[3] = n;
-
-    tm1637.display(TimeDisp);
-    delay(100);
-  }
+  tm1637.showNumberDec(date, false);
 }
