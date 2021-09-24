@@ -15,7 +15,7 @@ Adafruit_DotStar dotstar = Adafruit_DotStar(1, DOTSTAR_DATA_PIN, DOTSTAR_CLOCK_P
 TM1637Display tm1637(TM1637_CLK, TM1637_DIO);
 RTC_PCF8523 rtc;
 
-int brightness[] = { 2, 1, 1, 1, 1, 2, 4, 6, 8, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 8, 6, 4 };
+const int brightness[] = { 2, 1, 1, 1, 1, 2, 4, 6, 8, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 8, 6, 4 };
 
 
 void flashDotStar(uint32_t color, int count)
@@ -98,7 +98,7 @@ void initRTC()
 
   // When time needs to be re-set on a previously configured device, the
   // following line sets the RTC to the date & time this sketch was compiled
-  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
   // When the RTC was stopped and stays connected to the battery, it has
   // to be restarted by clearing the STOP bit. Let's do this to ensure
@@ -127,6 +127,7 @@ void loop()
 
   if (state != previousState)
   {
+    Serial.println(state);
     Serial.println(now.timestamp());
 
     switch (state)
